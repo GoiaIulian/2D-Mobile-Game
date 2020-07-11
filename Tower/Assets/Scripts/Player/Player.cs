@@ -1,7 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
-//using UnityEngine.InputSystem;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
 [RequireComponent(typeof(Controller2D))]
 [RequireComponent(typeof(Animator))]
@@ -41,11 +44,20 @@ public class Player : MonoBehaviour
     Vector3 velocity;
     int wallDirX;
 
+
+    PlayerControlls input;
     Controller2D controller;
 
     private void Awake()
     {
+        EnhancedTouchSupport.Enable();
+
         controller = GetComponent<Controller2D>();
+
+        input = new PlayerControlls();
+
+        input.Controlls.TakeOff.performed += _ => TakeOff();
+        input.Controlls.Jump.performed += _ => Climb();
 
         gravity = -(2 * maxjumpHeight) / Mathf.Pow(timeToJumpApex, 2);
         maxjumpVelocity = Mathf.Abs(gravity) * timeToJumpApex;
@@ -54,6 +66,7 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
+        Movement();
         wallDirX = (controller.collisions.left) ? -1 : 1;
 
 
@@ -118,6 +131,38 @@ public class Player : MonoBehaviour
         controller.Move(velocity * Time.fixedDeltaTime, false);
     }
 
+    void Movement()
+    {
+        if (Touch.activeFingers.Count >= 1)
+        {
+            Touch activeTouch = Touch.activeFingers[0].currentTouch;
+
+            if (activeTouch.screenPosition.x > Screen.width / 2)
+            {
+                MovementInput(new Vector2(1, 0));
+            }
+            else
+            {
+                MovementInput(new Vector2(-1, 0));
+            }
+        }
+        else
+        {
+            if (movement.x > 0.1)
+            {
+                MovementInput(new Vector2(movement.x - .1f, 0));
+            }
+            else if (movement.x < -0.1)
+            {
+                MovementInput(new Vector2(movement.x + .1f, 0));
+            }
+            else
+            {
+                MovementInput(new Vector2(0, 0));
+            }
+        }
+    }
+
     void Jump()
     {
         if (wallSliding)
@@ -140,10 +185,26 @@ public class Player : MonoBehaviour
         {
             velocity.y = maxjumpVelocity;
         }
-        else if (controller.collisions.canDoubleJump)
+        //else if (controller.collisions.canDoubleJump)
+        //{
+        //    velocity.y = maxjumpVelocity * .8f;
+        //    controller.collisions.canDoubleJump = false;
+        //}
+    }
+
+    private void TakeOff()
+    {
+        if (grounded)
         {
-            velocity.y = maxjumpVelocity * .8f;
-            controller.collisions.canDoubleJump = false;
+            Jump();
+        }
+    }
+
+    private void Climb()
+    {
+        if(!grounded)
+        {
+            Jump();
         }
     }
 
@@ -157,7 +218,7 @@ public class Player : MonoBehaviour
 
     void MovementInput(Vector2 m)
     {
-        movement.y = m.y;
+        movement.y = 0;
         if (m.x != 0)
         {
             movement.x = m.x;
@@ -172,14 +233,14 @@ public class Player : MonoBehaviour
     {
     }
 
-    // private void OnEnable()
-    //{
-    //input.Controls.Enable();
-    // }
+    private void OnEnable()
+    {
+        input.Controlls.Enable();
+    }
 
     private void OnDisable()
     {
-        //input.Controls.Disable();
+        input.Controlls.Disable();
     }
 
 }
