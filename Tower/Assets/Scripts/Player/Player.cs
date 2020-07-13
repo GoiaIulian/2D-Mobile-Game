@@ -13,30 +13,17 @@ public class Player : MonoBehaviour
     public Vector2 wallClimb;
     public Vector2 wallHop;
     public Vector2 wallLeap;
+    
     public bool grounded;
-
-
     bool wallSliding = false;
 
-    float wallStikTime = .45f;
+
     float timeToWallunstik;
+    float timeToClimb;
     Vector2 movement;
 
-    float maxFallSpeed = 20f;
-
-
-    public float maxjumpHeight = 4;
-    public float minJumpHeight = 1;
-
-    public float timeToJumpApex = .4f;
-
-    public float wallSlideSpeedMax = 3f;
-
-    float moveSpeed = 10;
+    
     float gravity;
-
-    float accelerationTimeAirborn = .2f;
-    float accelerationTimeGrounded = .1f;
 
     float maxjumpVelocity;
     float minjumpVelocity;
@@ -59,9 +46,9 @@ public class Player : MonoBehaviour
         input.Controlls.TakeOff.performed += _ => TakeOff();
         input.Controlls.Jump.performed += _ => Climb();
 
-        gravity = -(2 * maxjumpHeight) / Mathf.Pow(timeToJumpApex, 2);
-        maxjumpVelocity = Mathf.Abs(gravity) * timeToJumpApex;
-        minjumpVelocity = Mathf.Sqrt(2 * Mathf.Abs(gravity) * minJumpHeight);
+        gravity = -(2 * PlayerStats.MaxjumpHeight) / Mathf.Pow(PlayerStats.TimeToJumpApex, 2);
+        maxjumpVelocity = Mathf.Abs(gravity) * PlayerStats.TimeToJumpApex;
+        minjumpVelocity = Mathf.Sqrt(2 * Mathf.Abs(gravity) * PlayerStats.MinJumpHeight);
     }
 
     private void FixedUpdate()
@@ -70,8 +57,8 @@ public class Player : MonoBehaviour
         wallDirX = (controller.collisions.left) ? -1 : 1;
 
 
-        float targetVelocityX = movement.x * moveSpeed;
-        velocity.x = Mathf.SmoothDamp(velocity.x, targetVelocityX, ref velocityXSmoothing, (controller.collisions.below) ? accelerationTimeGrounded : accelerationTimeAirborn);
+        float targetVelocityX = movement.x * PlayerStats.MoveSpeed;
+        velocity.x = Mathf.SmoothDamp(velocity.x, targetVelocityX, ref velocityXSmoothing, (controller.collisions.below) ? PlayerStats.AccelerationTimeGrounded : PlayerStats.AccelerationTimeAirborn);
 
 
         wallSliding = false;
@@ -79,9 +66,9 @@ public class Player : MonoBehaviour
         {
             wallSliding = true;
 
-            if (velocity.y < -wallSlideSpeedMax)
+            if (velocity.y < -PlayerStats.WallSlideSpeedMax)
             {
-                velocity.y = -wallSlideSpeedMax;
+                velocity.y = -PlayerStats.WallSlideSpeedMax;
             }
 
             velocityXSmoothing = 0;
@@ -96,20 +83,25 @@ public class Player : MonoBehaviour
                 }
                 else
                 {
-                    timeToWallunstik = wallStikTime;
+                    timeToWallunstik = PlayerStats.WallStickTime;
                 }
             }
             else
             {
-                timeToWallunstik = wallStikTime;
+                timeToWallunstik = PlayerStats.WallStickTime;
             }
+        }
+
+        if (timeToClimb > 0)
+        {
+            timeToClimb -= Time.fixedDeltaTime;
         }
 
         velocity.y += gravity * Time.fixedDeltaTime;
 
-        if (velocity.y < -maxFallSpeed)
+        if (velocity.y < -PlayerStats.MaxFallSpeed)
         {
-            velocity.y = -maxFallSpeed;
+            velocity.y = -PlayerStats.MaxFallSpeed;
         }
 
         if (velocity.y < 0 && controller.collisions.below)
@@ -124,7 +116,7 @@ public class Player : MonoBehaviour
 
         if (grounded)
         {
-            moveSpeed = 10;
+            PlayerStats.MoveSpeed = 8;
         }
         grounded = controller.collisions.below;
 
@@ -167,7 +159,15 @@ public class Player : MonoBehaviour
     {
         if (wallSliding)
         {
-            moveSpeed = 10;
+            PlayerStats.MoveSpeed = 10;
+
+            if (timeToClimb > 0)
+            {
+                return;
+            }
+
+            timeToClimb = PlayerStats.ClimbTimeout;
+
             if (wallDirX == movement.x)
             {
                 velocity.x = -wallDirX * wallClimb.x;
@@ -184,6 +184,11 @@ public class Player : MonoBehaviour
         else if (grounded)
         {
             velocity.y = maxjumpVelocity;
+        }
+        else if (PlayerStats.CanJump && timeToClimb <= 0)
+        {
+            velocity.y = minjumpVelocity;
+            timeToClimb = PlayerStats.ClimbTimeout;
         }
         //else if (controller.collisions.canDoubleJump)
         //{
