@@ -1,8 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
-using UnityEngine;
-using UnityEngine.InputSystem;
+﻿using UnityEngine;
 using UnityEngine.InputSystem.EnhancedTouch;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
@@ -49,6 +45,11 @@ public class Player : MonoBehaviour
         gravity = -(2 * PlayerStats.MaxjumpHeight) / Mathf.Pow(PlayerStats.TimeToJumpApex, 2);
         maxjumpVelocity = Mathf.Abs(gravity) * PlayerStats.TimeToJumpApex;
         minjumpVelocity = Mathf.Sqrt(2 * Mathf.Abs(gravity) * PlayerStats.MinJumpHeight);
+    }
+
+    private void Start()
+    {
+        transform.position = PlayerStats.InitialPosition;
     }
 
     private void FixedUpdate()

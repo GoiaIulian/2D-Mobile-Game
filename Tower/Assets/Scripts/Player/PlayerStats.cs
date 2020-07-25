@@ -16,6 +16,10 @@ public class PlayerStats : ScriptableObject
 
     #region MOVEMENT
 
+    public static bool CanMove = true;
+    public static string EntranceKey;
+    public static Vector3 InitialPosition = Vector3.zero;
+
     public static float MaxFallSpeed = 20f;
     public static float WallSlideSpeedMax = 3f;
     public static float MoveSpeed = 8;
@@ -51,6 +55,12 @@ public class PlayerStats : ScriptableObject
             HitPoints = MaxHitPoints;
         }
     }
+
+    #endregion
+
+    #region WORLD
+
+    public static int LastSceneIndex = 2;
 
     #endregion
 }
